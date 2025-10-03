@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Multi-User LinkHub — Blue & White</title>
+<meta name="description" content="Multi-user Linktree style page using only HTML, CSS and JavaScript" />
+<link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+<style>
+  :root{
+    --bg1: #e9f3ff;
+    --bg2: #d6ecff;
+    --accent: #0b66ff;
+    --accent-deep: #0646b3;
+    --muted: #62788f;
+    --card: #fff;
+    --radius: 14px;
+    --maxw: 480px;
+    --gap: 14px;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+
+  html,body{height:100%;margin:0;background: linear-gradient(180deg,var(--bg1),var(--bg2));-webkit-font-smoothing:antialiased;}
+  .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:36px;}
+  .card{width:100%;max-width:var(--maxw);background:linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.98));border-radius:calc(var(--radius) + 6px);box-shadow: 0 8px 30px rgba(7,34,91,0.12);padding:28px;backdrop-filter: blur(6px);}
+  .top{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
+  .avatar{width:86px;height:86px;border-radius:50%;overflow:hidden;flex:0 0 86px;border:6px solid rgba(11,102,255,0.08);box-shadow: 0 6px 18px rgba(11,102,255,0.07);}
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+  .meta{flex:1;min-width:0;}
+  .name{font-size:18px;font-weight:700;color:var(--accent-deep);margin:0 0 4px 0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}
+  .bio{margin:0;color:var(--muted);font-size:13px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;max-height:2.6em;}
+  .controls{display:flex;gap:8px;align-items:center;margin-bottom:12px;}
+  .user-select{margin-left:auto;border-radius:999px;padding:6px 10px;background:rgba(11,102,255,0.06);border:none;color:var(--accent-deep);font-weight:600;cursor:pointer;}
+  .links{display:flex;flex-direction:column;gap:12px;margin-top:6px;}
+  .link-btn{
+    display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--card);border-radius:12px;box-shadow:0 8px 18px rgba(7,34,91,0.06);text-decoration:none;color:var(--accent-deep);font-weight:600;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+    border:1px solid rgba(10,55,120,0.03);
+  }
+  .link-btn:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(7,34,91,0.12);}
+  .link-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(180deg,var(--accent),var(--accent-deep));color:white;flex:0 0 36px;}
+  .link-text{flex:1;min-width:0;}
+  .link-title{font-size:15px;margin:0;line-height:1;}
+  .link-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .count{font-size:12px;color:var(--muted);margin-left:8px;padding:4px 8px;border-radius:999px;background:rgba(11,102,255,0.06);font-weight:700;}
+  .footer{margin-top:14px;text-align:center;color:var(--muted);font-size:13px;}
+  .small-toggle{font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;}
+
+  /* responsive */
+  @media (max-width:420px){
+    .card{padding:18px;}
+    .avatar{width:72px;height:72px;border-radius:50%}
+    .name{font-size:16px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <main class="card" role="main" aria-label="Link Hub card">
+    <div class="top">
+      <div class="avatar" id="avatar"><img alt="profile" src=""></div>
+      <div class="meta">
+        <h1 class="name" id="displayName">Loading...</h1>
+        <p class="bio" id="displayBio">Please wait</p>
+      </div>
+      <select id="userSelect" class="user-select" aria-label="Select user"></select>
+    </div>
+
+    <div id="links" class="links" aria-live="polite"></div>
+
+    <div class="footer">
+      <div>Built with HTML • CSS • JavaScript — Blue & White theme</div>
+      <div style="margin-top:8px;"><button id="shareBtn" class="small-toggle">Share current profile URL</button></div>
+    </div>
+  </main>
+</div>
+
+<script>
+/*
+  Multi-user LinkHub (single-file)
+  - Users are stored in the `users` object below.
+  - Load profile via ?user=username  or by the dropdown.
+  - Click counts persist in localStorage per browser.
+  - Only HTML/CSS/JS (no backend).
+*/
+
+/* --------- Sample users (edit/extend) ---------
+   Add or change entries here for real users.
+   Each user needs: username (key), name, bio, avatar (base64 or URL), links array.
+   link object: {title, url, subtitle (optional), icon: '📁' or SVG string}
+------------------------------------------------*/
+const users = {
+  "kevin": {
+  name: "Kevin Kipchumba",
+  bio: "Coder • Basketball • Builder — Kaboiyo General Agencies",
+  avatar: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><rect width='100%' height='100%' fill='#0b66ff'/><text x='50%' y='50%' font-size='120' fill='white' text-anchor='middle' dominant-baseline='central'>KK</text></svg>`),
+  links: [
+    {
+      title:"GitHub",
+      url:"https://github.com/kevinke3",
+      subtitle:"Projects & code",
+      icon:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.4.7-4.1-1.6-4.1-1.6-.6-1.4-1.3-1.8-1.3-1.8-1-.7.1-.7.1-.7 1.1.1 1.7 1.1 1.7 1.1 1 1.7 2.6 1.2 3.2.9.1-.7.4-1.2.7-1.5-2.7-.3-5.6-1.3-5.6-5.9 0-1.3.5-2.3 1.1-3.2-.1-.3-.5-1.5.1-3.1 0 0 .9-.3 3.2 1.1a11.1 11.1 0 0 1 5.8 0c2.3-1.4 3.2-1.1 3.2-1.1.6 1.6.2 2.8.1 3.1.7.9 1.1 1.9 1.1 3.2 0 4.6-2.9 5.6-5.6 5.9.4.3.8 1 .8 2v3c0 .3.2.7.8.6A12 12 0 0 0 12 .3Z"/></svg>`
+    },
+    {
+      title:"Portfolio",
+      url:"https://yourportfolio.example",
+      subtitle:"My work",
+      icon:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M4 6h16v12H4z"/><path d="M10 2h4v2h-4z"/></svg>`
+    },
+    {
+      title:"Instagram",
+      url:"https://instagram.com/yourprofile",
+      subtitle:"Photos",
+      icon:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 2C4.2 2 2 4.2 2 7v10c0 2.8 2.2 5 5 5h10c2.8 0 5-2.2 5-5V7c0-2.8-2.2-5-5-5H7zm10 2c1.7 0 3 1.3 3 3v10c0 1.7-1.3 3-3 3H7c-1.7 0-3-1.3-3-3V7c0-1.7 1.3-3 3-3h10zm-5 3a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6zm4.8-2.9a1.1 1.1 0 100 2.2 1.1 1.1 0 000-2.2z"/></svg>`
+    },
+    {
+      title:"Email",
+      url:"mailto:kevinke386@gmail.com",
+      subtitle:"Send an email",
+      icon:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M4 4h16v16H4z" fill="none"/><path d="M20 4H4v16h16V4zm-2 2v.01L12 13 6 6.01V6h12zM6 18V8.1l6 6 6-6V18H6z"/></svg>`
+    }
+  ]
+},
+
+  "alice": {
+    name: "Alice Mwangi",
+    bio: "Designer • Photographer • Creator",
+    avatar: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><rect width='100%' height='100%' fill='#0b66ff'/><text x='50%' y='50%' font-size='110' fill='white' text-anchor='middle' dominant-baseline='central'>AM</text></svg>`),
+    links: [
+      {title:"Portfolio", url:"https://alice.example", subtitle:"Design & art", icon: "🎨"},
+      {title:"Instagram", url:"https://instagram.com/alice", subtitle:"Photos & reels", icon: "I"},
+      {title:"Behance", url:"https://behance.net/alice", subtitle:"Showcase", icon: "B"}
+    ]
+  },
+  "demo": {
+    name: "Demo Account",
+    bio: "Example user to show how multiple profiles work",
+    avatar: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><rect width='100%' height='100%' fill='#0b66ff'/><text x='50%' y='50%' font-size='68' fill='white' text-anchor='middle' dominant-baseline='central'>Demo</text></svg>`),
+    links: [
+      {title:"Example.com", url:"https://example.com", subtitle:"An example link", icon: "🔗"},
+      {title:"Docs", url:"https://example.com/docs", subtitle:"Documentation", icon: "📚"}
+    ]
+  }
+};
+
+/* ---------- Utilities ---------- */
+function q(sel, root=document){ return root.querySelector(sel); }
+function qq(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
+function getQueryUser(){
+  const params = new URLSearchParams(location.search);
+  const u = params.get('user');
+  return u ? u.toLowerCase() : null;
+}
+function setQueryUser(username){
+  if(!username) return;
+  const url = new URL(location);
+  url.searchParams.set('user', username);
+  history.replaceState({}, '', url);
+}
+
+/* ---------- localStorage click counts ----------
+  Stored as: linkhub_counts = { username: { urlEncoded: count, ... }, ... }
+-----------------------------------------------*/
+const LS_KEY = 'linkhub_counts_v1';
+function loadCounts(){
+  try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; }
+}
+function saveCounts(obj){ localStorage.setItem(LS_KEY, JSON.stringify(obj)); }
+
+function incrementCount(username, linkUrl){
+  const counts = loadCounts();
+  counts[username] = counts[username] || {};
+  const key = encodeURIComponent(linkUrl);
+  counts[username][key] = (counts[username][key]||0) + 1;
+  saveCounts(counts);
+  return counts[username][key];
+}
+function getCount(username, linkUrl){
+  const counts = loadCounts();
+  return (counts[username] && counts[username][encodeURIComponent(linkUrl)]) || 0;
+}
+
+/* ---------- Render UI ---------- */
+const avatarEl = q('#avatar img') || (function(){ const i = document.createElement('img'); q('#avatar').appendChild(i); return i; })();
+const displayName = q('#displayName');
+const displayBio = q('#displayBio');
+const linksWrap = q('#links');
+const userSelect = q('#userSelect');
+
+function populateUserSelect(){
+  userSelect.innerHTML = '';
+  const keys = Object.keys(users).sort();
+  keys.forEach(k=>{
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = users[k].name + ' — ' + k;
+    userSelect.appendChild(opt);
+  });
+}
+
+function buildLinkButton(username, link){
+  const a = document.createElement('a');
+  a.className = 'link-btn';
+  a.href = link.url;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  a.setAttribute('data-url', link.url);
+
+  // left icon
+  const iconWrap = document.createElement('div');
+  iconWrap.className = 'link-icon';
+  // If icon is a short string (emoji or letter), show it; else allow svg markup
+  if(typeof link.icon === 'string' && link.icon.length < 6){
+    iconWrap.textContent = link.icon;
+  } else if(typeof link.icon === 'string' && link.icon.trim().startsWith('<svg')){
+    iconWrap.innerHTML = link.icon;
+  } else {
+    iconWrap.textContent = '🔗';
+  }
+
+  const text = document.createElement('div');
+  text.className = 'link-text';
+  const title = document.createElement('p');
+  title.className = 'link-title';
+  title.textContent = link.title;
+  const sub = document.createElement('div');
+  sub.className = 'link-sub';
+  sub.textContent = link.subtitle || link.url;
+
+  text.appendChild(title);
+  text.appendChild(sub);
+
+  const count = document.createElement('div');
+  count.className = 'count';
+  count.textContent = getCount(username, link.url);
+
+  a.appendChild(iconWrap);
+  a.appendChild(text);
+  a.appendChild(count);
+
+  // on click - increment count and update UI immediately
+  a.addEventListener('click', (ev)=>{
+    // allow middle click / cmd+click; counts still increment
+    const newVal = incrementCount(username, link.url);
+    count.textContent = newVal;
+    // NOTE: link will open in new tab (default) so no need to preventDefault
+  });
+
+  return a;
+}
+
+function renderUser(username){
+  if(!username || !users[username]){
+    // fallback to first user
+    const first = Object.keys(users)[0];
+    username = first;
+    setQueryUser(username);
+  }
+  const u = users[username];
+  // avatar
+  avatarEl.src = u.avatar || '';
+  avatarEl.alt = (u.name || username) + ' avatar';
+  displayName.textContent = u.name || username;
+  displayBio.textContent = u.bio || '';
+
+  // render links
+  linksWrap.innerHTML = '';
+  (u.links || []).forEach(l=>{
+    const btn = buildLinkButton(username, l);
+    linksWrap.appendChild(btn);
+  });
+
+  // set dropdown selection
+  userSelect.value = username;
+}
+
+/* ---------- Init ---------- */
+populateUserSelect();
+let initialUser = getQueryUser();
+if(!initialUser || !(initialUser in users)){
+  // if query user invalid, try to choose first user
+  initialUser = Object.keys(users)[0];
+  setQueryUser(initialUser);
+}
+renderUser(initialUser);
+
+/* when dropdown changes */
+userSelect.addEventListener('change', (e)=>{
+  const v = e.target.value;
+  setQueryUser(v);
+  renderUser(v);
+});
+
+/* share current profile */
+q('#shareBtn').addEventListener('click', ()=>{
+  const cur = userSelect.value;
+  const url = new URL(location);
+  url.searchParams.set('user', cur);
+  const shareUrl = url.toString();
+  // try navigator.share
+  if(navigator.share){
+    navigator.share({title: users[cur].name + ' — Links', url: shareUrl}).catch(()=>navigator.clipboard.writeText(shareUrl).then(()=>alert('Link copied to clipboard')));
+  } else {
+    navigator.clipboard.writeText(shareUrl).then(()=>alert('Profile URL copied to clipboard:\n' + shareUrl));
+  }
+});
+
+/* Accessibility: keyboard navigation for links (small enhancement) */
+linksWrap.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' && e.target && e.target.matches('.link-btn')){
+    e.target.click();
+  }
+});
+</script>
+</body>
+</html>
